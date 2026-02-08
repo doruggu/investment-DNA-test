@@ -9,6 +9,7 @@ import './App.css';
 function App() {
     const [step, setStep] = useState('landing'); // landing, quiz, result
     const [currentIdx, setCurrentIdx] = useState(0);
+    const [quizQuestions, setQuizQuestions] = useState([]);
     const [scores, setScores] = useState({
         risk: { A: 0, D: 0 },
         analysis: { T: 0, F: 0 },
@@ -17,6 +18,20 @@ function App() {
     });
 
     const startQuiz = () => {
+        // Pick 4 random questions from each axis to make a 16-question set
+        const shuffle = (array) => array.sort(() => Math.random() - 0.5);
+
+        const axes = ['risk', 'analysis', 'speed', 'source'];
+        const selected = [];
+
+        axes.forEach(axis => {
+            const filtered = questions.filter(q => q.axis === axis);
+            const shuffledAxis = shuffle([...filtered]);
+            selected.push(...shuffledAxis.slice(0, 4));
+        });
+
+        // Final shuffle of the combined 16 questions
+        setQuizQuestions(shuffle(selected));
         setStep('quiz');
         setCurrentIdx(0);
         setScores({
@@ -28,13 +43,13 @@ function App() {
     };
 
     const handleAnswer = (value) => {
-        const axis = questions[currentIdx].axis;
+        const axis = quizQuestions[currentIdx].axis;
         setScores(prev => ({
             ...prev,
             [axis]: { ...prev[axis], [value]: prev[axis][value] + 1 }
         }));
 
-        if (currentIdx < questions.length - 1) {
+        if (currentIdx < quizQuestions.length - 1) {
             setCurrentIdx(currentIdx + 1);
         } else {
             setStep('result');
@@ -94,31 +109,35 @@ function App() {
                         <div className="progress-container">
                             <div
                                 className="progress-bar"
-                                style={{ width: `${((currentIdx + 1) / questions.length) * 100}%` }}
+                                style={{ width: `${((currentIdx + 1) / quizQuestions.length) * 100}%` }}
                             ></div>
                         </div>
                         <p style={{ color: '#888', marginBottom: '10px', fontSize: '0.9rem' }}>
-                            {currentIdx + 1} / {questions.length}
+                            {currentIdx + 1} / {quizQuestions.length}
                         </p>
 
-                        {questions[currentIdx].image && (
+                        {quizQuestions[currentIdx] && quizQuestions[currentIdx].image && (
                             <div className="question-image-container">
-                                <img src={questions[currentIdx].image} alt="meme" className="question-image" />
+                                <img src={quizQuestions[currentIdx].image} alt="meme" className="question-image" />
                             </div>
                         )}
 
-                        <h2 className="question-text">{questions[currentIdx].question}</h2>
-                        <div className="options-container">
-                            {questions[currentIdx].options.map((opt, i) => (
-                                <button
-                                    key={i}
-                                    className="option-btn"
-                                    onClick={() => handleAnswer(opt.value)}
-                                >
-                                    {opt.text}
-                                </button>
-                            ))}
-                        </div>
+                        {quizQuestions[currentIdx] && (
+                            <>
+                                <h2 className="question-text">{quizQuestions[currentIdx].question}</h2>
+                                <div className="options-container">
+                                    {quizQuestions[currentIdx].options.map((opt, i) => (
+                                        <button
+                                            key={i}
+                                            className="option-btn"
+                                            onClick={() => handleAnswer(opt.value)}
+                                        >
+                                            {opt.text}
+                                        </button>
+                                    ))}
+                                </div>
+                            </>
+                        )}
                         <AdSense adSlot="QUIZ_AD_SLOT" />
                     </motion.div>
                 )}
